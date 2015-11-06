@@ -1,0 +1,32 @@
+{
+  "name": "example-mbedos-ws2812-rgb",
+  "version": "0.0.1",
+  "description": "Example software for controlling a WS2812 RGB LED array via network",
+  "keywords": [
+    "blinky",
+    "ws2812",
+    "mbed OS",
+    "mbed",
+    "mbed-official"
+  ],
+  "author": {
+    "name": "Milosch Meriac",
+    "email": "milosch.meriac@arm.com"
+  },
+  "repository": {
+    "url": "git@github.com:ARMmbed/example-mbedos-ws2812-rgb.git",
+    "type": "git"
+  },
+  "homepage": "https://github.com/ARMmbed/example-mbedos-ws2812-rgb",
+  "licenses": [
+    {
+      "url": "https://spdx.org/licenses/Apache-2.0",
+      "type": "Apache-2.0"
+    }
+  ],
+  "dependencies": {
+    "mbed-drivers": "*"
+  },
+  "targetDependencies": {},
+  "bin": "./source"
+}
