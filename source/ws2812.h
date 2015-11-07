@@ -14,24 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+ 
+#ifndef __WS2812__
+#define __WS2812__
 
-#include "mbed-drivers/mbed.h"
-#include "ws2812.h"
+#include "mbed-drivers/SPI.h"
 
-static Serial pc(USBTX, USBRX);
-static WS2812 rgb(PTD1);
+class WS2812 {
+    protected:
+        int m_width, m_height;
+        int *m_buffer;
+        mbed::SPI m_spi;
 
-static void blinky(void) {
-    static DigitalOut led(LED1);
+        void init(void);
 
-    led = !led;
-    pc.printf("LED = %d \n\r",led.read());
-}
+    public:
+        WS2812(PinName pin);
+        WS2812(PinName pin, int width);
+        WS2812(PinName pin, int width, int height);
+};
 
-void app_start(int, char**){
-    // set 115200 baud rate for stdout
-    pc.baud(115200);
-
-    minar::Scheduler::postCallback(blinky).period(minar::milliseconds(500));
-}
-
+#endif/*__WS2812__*/

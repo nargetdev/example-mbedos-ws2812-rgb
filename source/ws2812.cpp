@@ -15,23 +15,39 @@
  * limitations under the License.
  */
 
-#include "mbed-drivers/mbed.h"
+#include <stdint.h>
+#include "mbed-drivers/mbed_assert.h"
+
 #include "ws2812.h"
 
-static Serial pc(USBTX, USBRX);
-static WS2812 rgb(PTD1);
+WS2812::WS2812(PinName pin) :
+    m_width(1),
+    m_height(1),
+    m_spi(pin, NC, NC)
+{
+    init();
+};
 
-static void blinky(void) {
-    static DigitalOut led(LED1);
+WS2812::WS2812(PinName pin, int width) :
+    m_width(width),
+    m_height(1),
+    m_spi(pin, NC, NC)
+{
+    init();
+};
 
-    led = !led;
-    pc.printf("LED = %d \n\r",led.read());
-}
+WS2812::WS2812(PinName pin, int width, int height) :
+    m_width(width),
+    m_height(height),
+    m_spi(pin, NC, NC)
+{
+    init();
+};
 
-void app_start(int, char**){
-    // set 115200 baud rate for stdout
-    pc.baud(115200);
+void WS2812::init(void)
+{
+    MBED_ASSERT(m_width>0 && m_height>0);
 
-    minar::Scheduler::postCallback(blinky).period(minar::milliseconds(500));
+    m_buffer = new int [m_width*m_height];
 }
 
