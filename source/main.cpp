@@ -98,8 +98,8 @@ void app_start(int, char**){
     /* set initial pixels */
     for(i=0; i<PIXEL_WIDTH; i++)
     {
-        g_rgb.set(i,i, 0x400000);
-        g_rgb.set(PIXEL_WIDTH-1-i, i, 0x004000);
+        g_rgb.set(i,i, 0xFF0000);
+        g_rgb.set(PIXEL_WIDTH-1-i, i, 0x00FF00);
     }
     /* transmit RGB frame */
     g_rgb.send();

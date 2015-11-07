@@ -23,6 +23,8 @@
 #include "ws2812.h"
 #include "color-correction.h"
 
+#define RGB_DIMMING 2
+
 WS2812::WS2812(PinName pin) :
     SPI(pin, NC, NC),
     m_width(1),
@@ -127,6 +129,9 @@ void WS2812::send(void)
 {
     int length, *pixel;
 
+    /* disable interrupts during update */
+    __disable_irq();
+
     /* force RGB array reset */
     tx_reset();
 
@@ -138,6 +143,9 @@ void WS2812::send(void)
 
     /* force RGB array update */
     tx_reset();
+
+    /* re-enable interrupts */
+    __enable_irq();
 }
 
 void WS2812::set(int x, int rgb)
@@ -149,9 +157,9 @@ void WS2812::set(int x, int rgb)
         return;
 
     rgb_corrected =
-        ((uint32_t)g_cie_correction[(rgb>>16) & 0xFF]) <<  8 |
-        ((uint32_t)g_cie_correction[(rgb>> 8) & 0xFF]) << 16 |
-        ((uint32_t)g_cie_correction[(rgb>> 0) & 0xFF]) <<  0;
+        ((uint32_t)g_cie_correction[((rgb>>16) & 0xFF)/RGB_DIMMING]) <<  8 |
+        ((uint32_t)g_cie_correction[((rgb>> 8) & 0xFF)/RGB_DIMMING]) << 16 |
+        ((uint32_t)g_cie_correction[((rgb>> 0) & 0xFF)/RGB_DIMMING]) <<  0;
 
     m_buffer[x] = rgb_corrected;
 }
