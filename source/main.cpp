@@ -35,13 +35,17 @@ static void blinky(void) {
 }
 
 void app_start(int, char**){
+    int i;
+
     /* set 115200 baud rate for stdout */
     g_pc.baud(115200);
 
-    /* set three example pixels */
-    g_rgb.set(0, 0xFF00000);
-    g_rgb.set(1, 0x00FF000);
-    g_rgb.set(2, 0x0000FF0);
+    /* set example pixels */
+    for(i=0; i<PIXEL_WIDTH; i++)
+    {
+        g_rgb.set(i,i, 0x0F00000);
+        g_rgb.set(PIXEL_WIDTH-1-i, i, 0x000F000);
+    }
 
     minar::Scheduler::postCallback(blinky)
         .period(minar::milliseconds(100))

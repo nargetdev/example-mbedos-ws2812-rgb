@@ -41,6 +41,7 @@ class WS2812 : protected mbed::SPI {
 
         void send(void);
         void set(int x, int rgb);
+        void set(int x, int y, int rgb);
 };
 
 #endif/*__WS2812__*/

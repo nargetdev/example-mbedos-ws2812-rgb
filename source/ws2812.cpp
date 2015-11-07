@@ -148,3 +148,13 @@ void WS2812::set(int x, int rgb)
 
     m_buffer[x] = rgb_corrected;
 }
+
+void WS2812::set(int x, int y, int rgb)
+{
+    /* check x/y range */
+    if( (y<0) || (y>m_height) || (x<0) || (x>m_width) )
+        return;
+
+    /* perform linear write */
+    set(y * m_width + x, rgb);
+}
