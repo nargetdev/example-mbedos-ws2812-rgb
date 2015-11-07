@@ -98,7 +98,7 @@ void WS2812::tx(uint32_t value)
     /* transmit RGB sequence for one WD2812B pixel */
     for(i=0; i<24; i++)
     {
-        tx_raw((value & 0x800000) ? 0xF800 : 0xFF80);
+        tx_raw((value & 0x800000) ? 0xFF80 : 0xF800 );
         value <<= 1;
     }
 }
