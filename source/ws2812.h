@@ -24,7 +24,7 @@
 
 class WS2812 : protected mbed::SPI {
     protected:
-        int m_width, m_height;
+        int m_width, m_height, m_size;
         int *m_buffer;
         dspi_command_config_t m_cmd;
 
@@ -40,6 +40,7 @@ class WS2812 : protected mbed::SPI {
         WS2812(PinName pin, int width, int height);
 
         void send(void);
+        void set(int x, int rgb);
 };
 
 #endif/*__WS2812__*/

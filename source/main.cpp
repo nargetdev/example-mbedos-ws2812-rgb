@@ -18,10 +18,12 @@
 #include "mbed-drivers/mbed.h"
 #include "ws2812.h"
 
+#define PIXEL_WIDTH  8
+#define PIXEL_HEIGHT 8
 
 static DigitalOut g_led(LED1);
 static Serial g_pc(USBTX, USBRX);
-static WS2812 g_rgb(PTD2);
+static WS2812 g_rgb(PTD2, PIXEL_WIDTH, PIXEL_HEIGHT);
 
 static void blinky(void) {
 
@@ -33,8 +35,13 @@ static void blinky(void) {
 }
 
 void app_start(int, char**){
-    // set 115200 baud rate for stdout
+    /* set 115200 baud rate for stdout */
     g_pc.baud(115200);
+
+    /* set three example pixels */
+    g_rgb.set(0, 0xFF00000);
+    g_rgb.set(1, 0x00FF000);
+    g_rgb.set(2, 0x0000FF0);
 
     minar::Scheduler::postCallback(blinky)
         .period(minar::milliseconds(100))

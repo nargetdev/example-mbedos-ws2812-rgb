@@ -21,6 +21,7 @@
 #include "fsl_dspi_hal.h"
 
 #include "ws2812.h"
+#include "color-correction.h"
 
 WS2812::WS2812(PinName pin) :
     SPI(pin, NC, NC),
@@ -48,13 +49,18 @@ WS2812::WS2812(PinName pin, int width, int height) :
 
 void WS2812::init(void)
 {
+    MBED_ASSERT(COLOR_CORRECTION_RANGE == 0x100);
+
     if(m_width<1)
         m_width = 1;
     if(m_height<1)
         m_height = 1;
 
     /* allocate output buffer */
-    m_buffer = new int [m_width*m_height];
+    m_size = m_width*m_height;
+    m_buffer = new int [m_size];
+    /* reset output buffer */
+    memset(m_buffer, 0, m_size*sizeof(m_buffer[0]));
 
     /* update SPI cmd */
     memset(&m_cmd, 0, sizeof(m_cmd));
@@ -112,14 +118,33 @@ void WS2812::tx_reset(void)
     m_cmd.whichCtar = kDspiCtar0;
 }
 
-
 void WS2812::send(void)
 {
-    tx_reset();
-
-    tx(0xFF0000);
-    tx(0x00FF00);
-    tx(0x0000FF);
+    int length, *pixel;
 
     tx_reset();
+
+    /* transmit pixel buffer */
+    pixel = m_buffer;
+    length = m_size;
+    while(length--)
+        tx(*pixel++);
+
+    tx_reset();
+}
+
+void WS2812::set(int x, int rgb)
+{
+    int rgb_corrected;
+
+    /* check range */
+    if((x<0) || (x>m_size))
+        return;
+
+    rgb_corrected =
+        ((uint32_t)g_cie_correction[(rgb>>16) & 0xFF]) <<  8 |
+        ((uint32_t)g_cie_correction[(rgb>> 8) & 0xFF]) << 16 |
+        ((uint32_t)g_cie_correction[(rgb>> 0) & 0xFF]) <<  0;
+
+    m_buffer[x] = rgb_corrected;
 }
