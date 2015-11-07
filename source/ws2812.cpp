@@ -71,14 +71,14 @@ void WS2812::tx(uint32_t value)
     cmd.isEndOfQueue = false;
     cmd.isChipSelectContinuous = true;
 
-    for(i=0; i<32; i++)
+    for(i=0; i<24; i++)
     {
         /* wait for TX buffer */
         while(!DSPI_HAL_GetStatusFlag(_spi.spi.address, kDspiTxFifoFillRequest));
-        DSPI_HAL_WriteDataMastermode(_spi.spi.address, &cmd, (value & 1) ? 0xF800 : 0xFF80);
+        DSPI_HAL_WriteDataMastermode(_spi.spi.address, &cmd, (value & 0x800000) ? 0xF800 : 0xFF80);
         DSPI_HAL_ClearStatusFlag(_spi.spi.address, kDspiTxFifoFillRequest);
 
-        value >>= 1;
+        value <<= 1;
     }
 }
 
