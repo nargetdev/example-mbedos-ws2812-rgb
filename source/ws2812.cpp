@@ -104,7 +104,7 @@ void WS2812::tx(uint32_t value)
     /* transmit RGB sequence for one WD2812B pixel */
     for(i=0; i<24; i++)
     {
-        tx_raw((value & 0x800000) ? 0xFF80 : 0xF800 );
+        tx_raw( (value & 0x800000) ? 0xFF80 : 0xF800 );
         value <<= 1;
     }
 }
@@ -122,6 +122,7 @@ void WS2812::send(void)
 {
     int length, *pixel;
 
+    /* force RGB array reset */
     tx_reset();
 
     /* transmit pixel buffer */
@@ -130,6 +131,7 @@ void WS2812::send(void)
     while(length--)
         tx(*pixel++);
 
+    /* force RGB array update */
     tx_reset();
 }
 
