@@ -17,37 +17,74 @@
 
 #include <stdint.h>
 #include "mbed-drivers/mbed_assert.h"
+#include "fsl_clock_manager.h"
+#include "fsl_dspi_hal.h"
 
 #include "ws2812.h"
 
 WS2812::WS2812(PinName pin) :
+    SPI(pin, NC, NC),
     m_width(1),
-    m_height(1),
-    m_spi(pin, NC, NC)
+    m_height(1)
 {
     init();
 };
 
 WS2812::WS2812(PinName pin, int width) :
+    SPI(pin, NC, NC),
     m_width(width),
-    m_height(1),
-    m_spi(pin, NC, NC)
+    m_height(1)
 {
     init();
 };
 
 WS2812::WS2812(PinName pin, int width, int height) :
+    SPI(pin, NC, NC),
     m_width(width),
-    m_height(height),
-    m_spi(pin, NC, NC)
+    m_height(height)
 {
     init();
 };
 
 void WS2812::init(void)
 {
-    MBED_ASSERT(m_width>0 && m_height>0);
+    if(m_width<1)
+        m_width = 1;
+    if(m_height<1)
+        m_height = 1;
 
+    /* allocate output buffer */
     m_buffer = new int [m_width*m_height];
+
+    /* configure SPI settings */
+    format(16, 0, SPI_MSB);
+    frequency(12600000);
 }
 
+void WS2812::tx(uint32_t value)
+{
+    int i;
+    dspi_command_config_t cmd;
+
+    /* prepare SPI command */
+    memset(&cmd, 0, sizeof(cmd));
+    cmd.isEndOfQueue = false;
+    cmd.isChipSelectContinuous = true;
+
+    for(i=0; i<32; i++)
+    {
+        /* wait for TX buffer */
+        while(!DSPI_HAL_GetStatusFlag(_spi.spi.address, kDspiTxFifoFillRequest));
+        DSPI_HAL_WriteDataMastermode(_spi.spi.address, &cmd, (value & 1) ? 0xF800 : 0xFF80);
+        DSPI_HAL_ClearStatusFlag(_spi.spi.address, kDspiTxFifoFillRequest);
+
+        value >>= 1;
+    }
+}
+
+void WS2812::send(void)
+{
+    tx(0xFF0000);
+    tx(0x00FF00);
+    tx(0x0000FF);
+}

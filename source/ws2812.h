@@ -20,18 +20,20 @@
 
 #include "mbed-drivers/SPI.h"
 
-class WS2812 {
+class WS2812 : protected mbed::SPI {
     protected:
         int m_width, m_height;
         int *m_buffer;
-        mbed::SPI m_spi;
 
         void init(void);
+        void tx(uint32_t value);
 
     public:
         WS2812(PinName pin);
         WS2812(PinName pin, int width);
         WS2812(PinName pin, int width, int height);
+
+        void send(void);
 };
 
 #endif/*__WS2812__*/

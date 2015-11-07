@@ -18,20 +18,24 @@
 #include "mbed-drivers/mbed.h"
 #include "ws2812.h"
 
-static Serial pc(USBTX, USBRX);
-static WS2812 rgb(PTD1);
+
+static DigitalOut g_led(LED1);
+static Serial g_pc(USBTX, USBRX);
+static WS2812 g_rgb(PTD2);
 
 static void blinky(void) {
-    static DigitalOut led(LED1);
 
-    led = !led;
-    pc.printf("LED = %d \n\r",led.read());
+    g_led = !g_led;
+    g_pc.printf("LED = %d \n\r",g_led.read());
+
+    /* transmit RGB frame */
+    g_rgb.send();
 }
 
 void app_start(int, char**){
     // set 115200 baud rate for stdout
-    pc.baud(115200);
+    g_pc.baud(115200);
 
-    minar::Scheduler::postCallback(blinky).period(minar::milliseconds(500));
+    minar::Scheduler::postCallback(blinky).period(minar::milliseconds(100));
 }
 
