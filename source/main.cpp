@@ -20,7 +20,7 @@
 #include "sal-stack-lwip/lwipv4_init.h"
 #include "sal/socket_api.h"
 #include "sockets/UDPSocket.h"
-#include "ws2812.h"
+#include "ws2xxx-rgb-led/ws2xxx.h"
 
 #define STR_NUM(x) #x
 #define STR(x) STR_NUM(x)
@@ -36,7 +36,7 @@ static UDPSocket *g_udp_server;
 static EthernetInterface g_eth;
 static DigitalOut g_led(LED1);
 static Serial g_pc(USBTX, USBRX);
-static WS2812 g_rgb(PTD2, PIXEL_WIDTH, PIXEL_HEIGHT);
+static WS2xxx g_rgb(PTD2, PIXEL_WIDTH, PIXEL_HEIGHT);
 static const char g_id_string[] = SERVER_RESPONSE;
 
 static void ActivityLedToggle(void) {

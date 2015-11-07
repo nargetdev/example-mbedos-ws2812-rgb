@@ -26,7 +26,7 @@
   ],
   "dependencies": {
     "sockets": "^1.0.2",
-    "mbed-drivers": "^0.11.2"
+    "ws2xxx-rgb-led": "*"
   },
   "targetDependencies": {},
   "bin": "./source"
