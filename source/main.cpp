@@ -22,24 +22,71 @@
 #include "sockets/UDPSocket.h"
 #include "ws2812.h"
 
+#define STR_NUM(x) #x
+#define STR(x) STR_NUM(x)
+
 using namespace mbed::Sockets::v0;
 
 #define UDP_SERVER_PORT 2342
-#define PIXEL_WIDTH  8
+#define PIXEL_WIDTH 8
 #define PIXEL_HEIGHT 8
+#define SERVER_RESPONSE "{\"type\": \"RAINBOW_MATRIX\", \"width\": " STR(PIXEL_WIDTH) ",\"height\": " STR(PIXEL_HEIGHT) "}\n\r"
 
 static UDPSocket *g_udp_server;
 static EthernetInterface g_eth;
 static DigitalOut g_led(LED1);
 static Serial g_pc(USBTX, USBRX);
 static WS2812 g_rgb(PTD2, PIXEL_WIDTH, PIXEL_HEIGHT);
+static const char g_id_string[] = SERVER_RESPONSE;
 
-static void frame_update(void) {
+static void activity_led(void) {
     /* blink LED to show activity */
     g_led = !g_led;
+}
 
-    /* transmit RGB frame */
-    g_rgb.send();
+void onError(Socket *s, socket_error_t err) {
+    (void) s;
+    printf("NET: Socket Error: %s (%d)\r\n", socket_strerror(err), err);
+    minar::Scheduler::stop();
+}
+
+void onRx(Socket *s) {
+    SocketAddr addr;
+    int pos;
+    uint16_t port;
+    uint8_t buffer[PIXEL_WIDTH*PIXEL_HEIGHT*3], *p;
+    size_t len = sizeof(buffer);
+
+    /* Recieve the packet */
+    socket_error_t err = s->recv_from(buffer, &len, &addr, &port);
+    if (!s->error_check(err) && len) {
+
+        g_pc.printf("NET: rx[%i]\r\n", len);
+
+        /* send the packet */
+        err = s->send_to(&g_id_string, sizeof(g_id_string), &addr,port);
+        if (err != SOCKET_ERROR_NONE) {
+            onError(s, err);
+        }
+
+        /* update RGB buffer with received data */
+        pos = 0;
+        p = buffer;
+        /* clear output buffer */
+        g_rgb.clear();
+        while(len>=3)
+        {
+            g_rgb.set( pos++,
+                (((uint32_t)p[0]) << 16) |
+                (((uint32_t)p[1]) <<  8) |
+                (((uint32_t)p[2]) <<  0)
+            );
+            p += 3;
+            len -= 3;
+        }
+        /* transmit RGB frame */
+        g_rgb.send();
+    }
 }
 
 void app_start(int, char**){
@@ -48,28 +95,39 @@ void app_start(int, char**){
     /* set 115200 baud rate for stdout */
     g_pc.baud(115200);
 
+    /* set initial pixels */
+    for(i=0; i<PIXEL_WIDTH; i++)
+    {
+        g_rgb.set(i,i, 0x400000);
+        g_rgb.set(PIXEL_WIDTH-1-i, i, 0x004000);
+    }
+    /* transmit RGB frame */
+    g_rgb.send();
+
     /* Initialise with DHCP, connect, and start up the stack */
     g_eth.init();
     g_eth.connect();
 
     socket_error_t err = lwipv4_socket_init();
     if (err) {
-        printf("ERROR: Failed to initialize socket stack (%d)\r\n", err);
+        g_pc.printf("ERROR: Failed to initialize socket stack (%d)\r\n", err);
         return;
     }
+    g_pc.printf("NET: UDP Server IP Address is %s:%d\r\n", g_eth.getIPAddress(), UDP_SERVER_PORT);
+
+    /* bind server socket */
     g_udp_server = new UDPSocket(SOCKET_STACK_LWIP_IPV4);
+    g_udp_server->setOnError(UDPSocket::ErrorHandler_t(onError));
+    g_udp_server->open(SOCKET_AF_INET4);
+    err = g_udp_server->bind("0.0.0.0", UDP_SERVER_PORT);
+    g_udp_server->error_check(err);
+    g_udp_server->setOnReadable(UDPSocket::ReadableHandler_t(onRx));
 
-    printf("NET: UDP Server IP Address is %s:%d\r\n", g_eth.getIPAddress(), UDP_SERVER_PORT);
+    g_pc.printf("NET: Waiting for packet...\r\n");
 
-    /* set example pixels */
-    for(i=0; i<PIXEL_WIDTH; i++)
-    {
-        g_rgb.set(i,i, 0x400000);
-        g_rgb.set(PIXEL_WIDTH-1-i, i, 0x004000);
-    }
-
-    minar::Scheduler::postCallback(frame_update)
-        .period(minar::milliseconds(50))
-        .tolerance(minar::milliseconds(1));
+    /* initialize activity led */
+    minar::Scheduler::postCallback(activity_led)
+        .period(minar::milliseconds(1000))
+        .tolerance(minar::milliseconds(10));
 }
 

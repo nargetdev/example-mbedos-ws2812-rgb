@@ -47,6 +47,12 @@ WS2812::WS2812(PinName pin, int width, int height) :
     init();
 };
 
+void WS2812::clear(void)
+{
+    /* clear output buffer */
+    memset(m_buffer, 0, m_size*sizeof(m_buffer[0]));
+}
+
 void WS2812::init(void)
 {
     MBED_ASSERT(COLOR_CORRECTION_RANGE == 0x100);
@@ -59,8 +65,7 @@ void WS2812::init(void)
     /* allocate output buffer */
     m_size = m_width*m_height;
     m_buffer = new int [m_size];
-    /* reset output buffer */
-    memset(m_buffer, 0, m_size*sizeof(m_buffer[0]));
+    clear();
 
     /* update SPI cmd */
     memset(&m_cmd, 0, sizeof(m_cmd));

@@ -40,6 +40,7 @@ class WS2812 : protected mbed::SPI {
         WS2812(PinName pin, int width, int height);
 
         void send(void);
+        void clear(void);
         void set(int x, int rgb);
         void set(int x, int y, int rgb);
 };
