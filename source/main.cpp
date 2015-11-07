@@ -39,18 +39,18 @@ static Serial g_pc(USBTX, USBRX);
 static WS2812 g_rgb(PTD2, PIXEL_WIDTH, PIXEL_HEIGHT);
 static const char g_id_string[] = SERVER_RESPONSE;
 
-static void activity_led(void) {
+static void ActivityLedToggle(void) {
     /* blink LED to show activity */
     g_led = !g_led;
 }
 
-void onError(Socket *s, socket_error_t err) {
+static void NetworkError(Socket *s, socket_error_t err) {
     (void) s;
     printf("NET: Socket Error: %s (%d)\r\n", socket_strerror(err), err);
     minar::Scheduler::stop();
 }
 
-void onRx(Socket *s) {
+static void NetworkReceive(Socket *s) {
     SocketAddr addr;
     int pos;
     uint16_t port;
@@ -66,7 +66,7 @@ void onRx(Socket *s) {
         /* send the packet */
         err = s->send_to(&g_id_string, sizeof(g_id_string), &addr,port);
         if (err != SOCKET_ERROR_NONE) {
-            onError(s, err);
+            NetworkError(s, err);
         }
 
         /* update RGB buffer with received data */
@@ -89,21 +89,7 @@ void onRx(Socket *s) {
     }
 }
 
-void app_start(int, char**){
-    int i;
-
-    /* set 115200 baud rate for stdout */
-    g_pc.baud(115200);
-
-    /* set initial pixels */
-    for(i=0; i<PIXEL_WIDTH; i++)
-    {
-        g_rgb.set(i,i, 0xFF0000);
-        g_rgb.set(PIXEL_WIDTH-1-i, i, 0x00FF00);
-    }
-    /* transmit RGB frame */
-    g_rgb.send();
-
+static void NetworkInit(void){
     /* Initialise with DHCP, connect, and start up the stack */
     g_eth.init();
     g_eth.connect();
@@ -117,16 +103,35 @@ void app_start(int, char**){
 
     /* bind server socket */
     g_udp_server = new UDPSocket(SOCKET_STACK_LWIP_IPV4);
-    g_udp_server->setOnError(UDPSocket::ErrorHandler_t(onError));
+    g_udp_server->setOnError(UDPSocket::ErrorHandler_t(NetworkError));
     g_udp_server->open(SOCKET_AF_INET4);
     err = g_udp_server->bind("0.0.0.0", UDP_SERVER_PORT);
     g_udp_server->error_check(err);
-    g_udp_server->setOnReadable(UDPSocket::ReadableHandler_t(onRx));
+    g_udp_server->setOnReadable(UDPSocket::ReadableHandler_t(NetworkReceive));
 
     g_pc.printf("NET: Waiting for packet...\r\n");
+}
+
+void app_start(int, char**){
+    int i;
+
+    /* set 115200 baud rate for stdout */
+    g_pc.baud(115200);
+
+    /* set initial pixels */
+    for(i=0; i<PIXEL_WIDTH; i++)
+    {
+        g_rgb.set(i,i, 0xFF0000);
+        g_rgb.set(PIXEL_WIDTH-1-i, i, 0x00FF00);
+    }
+    /* transmit first RGB frame */
+    g_rgb.send();
+
+    /* initialize network */
+    NetworkInit();
 
     /* initialize activity led */
-    minar::Scheduler::postCallback(activity_led)
+    minar::Scheduler::postCallback(ActivityLedToggle)
         .period(minar::milliseconds(1000))
         .tolerance(minar::milliseconds(10));
 }
