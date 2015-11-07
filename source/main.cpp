@@ -43,8 +43,8 @@ void app_start(int, char**){
     /* set example pixels */
     for(i=0; i<PIXEL_WIDTH; i++)
     {
-        g_rgb.set(i,i, 0x0F00000);
-        g_rgb.set(PIXEL_WIDTH-1-i, i, 0x000F000);
+        g_rgb.set(i,i, 0x400000);
+        g_rgb.set(PIXEL_WIDTH-1-i, i, 0x004000);
     }
 
     minar::Scheduler::postCallback(blinky)
