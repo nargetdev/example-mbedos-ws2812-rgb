@@ -25,10 +25,10 @@ static DigitalOut g_led(LED1);
 static Serial g_pc(USBTX, USBRX);
 static WS2812 g_rgb(PTD2, PIXEL_WIDTH, PIXEL_HEIGHT);
 
-static void blinky(void) {
-
+static void frame_update(void) {
+    /* blink LED to show activity */
     g_led = !g_led;
-    g_pc.printf("LED = %d \n\r",g_led.read());
+    g_pc.printf("frame_update\n\r");
 
     /* transmit RGB frame */
     g_rgb.send();
@@ -47,8 +47,8 @@ void app_start(int, char**){
         g_rgb.set(PIXEL_WIDTH-1-i, i, 0x004000);
     }
 
-    minar::Scheduler::postCallback(blinky)
-        .period(minar::milliseconds(100))
+    minar::Scheduler::postCallback(frame_update)
+        .period(minar::milliseconds(50))
         .tolerance(minar::milliseconds(1));
 }
 
