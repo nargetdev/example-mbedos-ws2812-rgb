@@ -31,6 +31,8 @@ class WS2812 : protected mbed::SPI {
         void init(void);
         void tx(uint32_t value);
         void tx_raw(uint16_t value);
+        void tx_reset(void);
+        void frequency(int hz, dspi_ctar_selection_t ctar);
 
     public:
         WS2812(PinName pin);

@@ -60,10 +60,15 @@ void WS2812::init(void)
     memset(&m_cmd, 0, sizeof(m_cmd));
     m_cmd.isEndOfQueue = false;
     m_cmd.isChipSelectContinuous = true;
+    /* used data CTAR by default */
+    m_cmd.whichCtar = kDspiCtar0;
 
     /* configure SPI settings */
     format(16, 0, SPI_MSB);
-    frequency(12600000);
+    /* data  CTAR */
+    frequency(12600000, kDspiCtar0);
+    /* reset CTAR */
+    frequency(300000, kDspiCtar1);
 }
 
 void WS2812::tx_raw(uint16_t value)
@@ -74,10 +79,23 @@ void WS2812::tx_raw(uint16_t value)
     DSPI_HAL_ClearStatusFlag(_spi.spi.address, kDspiTxFifoFillRequest);
 }
 
+void WS2812::frequency(int hz, dspi_ctar_selection_t ctar)
+{
+    uint32_t busClock;
+
+    /* update HZ only for CTAR0 */
+    if(ctar == kDspiCtar0)
+        _hz = hz;
+
+    CLOCK_SYS_GetFreq(kBusClock, &busClock);
+    DSPI_HAL_SetBaudRate(_spi.spi.address, ctar, (uint32_t)hz, busClock);
+}
+
 void WS2812::tx(uint32_t value)
 {
     int i;
 
+    /* transmit RGB sequence for one WD2812B pixel */
     for(i=0; i<24; i++)
     {
         tx_raw((value & 0x800000) ? 0xF800 : 0xFF80);
@@ -85,10 +103,23 @@ void WS2812::tx(uint32_t value)
     }
 }
 
+void WS2812::tx_reset(void)
+{
+    /* send reset CTAR */
+    m_cmd.whichCtar = kDspiCtar1;
+    tx_raw(0x00);
+    /* switch back to data CTAR */
+    m_cmd.whichCtar = kDspiCtar0;
+}
+
+
 void WS2812::send(void)
 {
-    tx_raw(0x00);
+    tx_reset();
+
     tx(0xFF0000);
     tx(0x00FF00);
     tx(0x0000FF);
+
+    tx_reset();
 }
