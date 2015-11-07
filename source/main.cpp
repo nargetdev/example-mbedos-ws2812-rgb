@@ -16,11 +16,20 @@
  */
 
 #include "mbed-drivers/mbed.h"
+#include "sal-iface-eth/EthernetInterface.h"
+#include "sal-stack-lwip/lwipv4_init.h"
+#include "sal/socket_api.h"
+#include "sockets/UDPSocket.h"
 #include "ws2812.h"
 
+using namespace mbed::Sockets::v0;
+
+#define UDP_SERVER_PORT 2342
 #define PIXEL_WIDTH  8
 #define PIXEL_HEIGHT 8
 
+static UDPSocket *g_udp_server;
+static EthernetInterface g_eth;
 static DigitalOut g_led(LED1);
 static Serial g_pc(USBTX, USBRX);
 static WS2812 g_rgb(PTD2, PIXEL_WIDTH, PIXEL_HEIGHT);
@@ -28,7 +37,6 @@ static WS2812 g_rgb(PTD2, PIXEL_WIDTH, PIXEL_HEIGHT);
 static void frame_update(void) {
     /* blink LED to show activity */
     g_led = !g_led;
-    g_pc.printf("frame_update\n\r");
 
     /* transmit RGB frame */
     g_rgb.send();
@@ -39,6 +47,19 @@ void app_start(int, char**){
 
     /* set 115200 baud rate for stdout */
     g_pc.baud(115200);
+
+    /* Initialise with DHCP, connect, and start up the stack */
+    g_eth.init();
+    g_eth.connect();
+
+    socket_error_t err = lwipv4_socket_init();
+    if (err) {
+        printf("ERROR: Failed to initialize socket stack (%d)\r\n", err);
+        return;
+    }
+    g_udp_server = new UDPSocket(SOCKET_STACK_LWIP_IPV4);
+
+    printf("NET: UDP Server IP Address is %s:%d\r\n", g_eth.getIPAddress(), UDP_SERVER_PORT);
 
     /* set example pixels */
     for(i=0; i<PIXEL_WIDTH; i++)
