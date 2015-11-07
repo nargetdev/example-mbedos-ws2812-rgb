@@ -36,6 +36,8 @@ void app_start(int, char**){
     // set 115200 baud rate for stdout
     g_pc.baud(115200);
 
-    minar::Scheduler::postCallback(blinky).period(minar::milliseconds(100));
+    minar::Scheduler::postCallback(blinky)
+        .period(minar::milliseconds(100))
+        .tolerance(minar::milliseconds(1));
 }
 

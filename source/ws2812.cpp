@@ -56,34 +56,38 @@ void WS2812::init(void)
     /* allocate output buffer */
     m_buffer = new int [m_width*m_height];
 
+    /* update SPI cmd */
+    memset(&m_cmd, 0, sizeof(m_cmd));
+    m_cmd.isEndOfQueue = false;
+    m_cmd.isChipSelectContinuous = true;
+
     /* configure SPI settings */
     format(16, 0, SPI_MSB);
     frequency(12600000);
 }
 
+void WS2812::tx_raw(uint16_t value)
+{
+    /* wait for TX buffer */
+    while(!DSPI_HAL_GetStatusFlag(_spi.spi.address, kDspiTxFifoFillRequest));
+    DSPI_HAL_WriteDataMastermode(_spi.spi.address, &m_cmd, value);
+    DSPI_HAL_ClearStatusFlag(_spi.spi.address, kDspiTxFifoFillRequest);
+}
+
 void WS2812::tx(uint32_t value)
 {
     int i;
-    dspi_command_config_t cmd;
-
-    /* prepare SPI command */
-    memset(&cmd, 0, sizeof(cmd));
-    cmd.isEndOfQueue = false;
-    cmd.isChipSelectContinuous = true;
 
     for(i=0; i<24; i++)
     {
-        /* wait for TX buffer */
-        while(!DSPI_HAL_GetStatusFlag(_spi.spi.address, kDspiTxFifoFillRequest));
-        DSPI_HAL_WriteDataMastermode(_spi.spi.address, &cmd, (value & 0x800000) ? 0xF800 : 0xFF80);
-        DSPI_HAL_ClearStatusFlag(_spi.spi.address, kDspiTxFifoFillRequest);
-
+        tx_raw((value & 0x800000) ? 0xF800 : 0xFF80);
         value <<= 1;
     }
 }
 
 void WS2812::send(void)
 {
+    tx_raw(0x00);
     tx(0xFF0000);
     tx(0x00FF00);
     tx(0x0000FF);

@@ -19,14 +19,18 @@
 #define __WS2812__
 
 #include "mbed-drivers/SPI.h"
+#include "fsl_clock_manager.h"
+#include "fsl_dspi_hal.h"
 
 class WS2812 : protected mbed::SPI {
     protected:
         int m_width, m_height;
         int *m_buffer;
+        dspi_command_config_t m_cmd;
 
         void init(void);
         void tx(uint32_t value);
+        void tx_raw(uint16_t value);
 
     public:
         WS2812(PinName pin);
