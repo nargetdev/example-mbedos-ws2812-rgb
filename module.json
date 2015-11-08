@@ -1,6 +1,6 @@
 {
   "name": "example-mbedos-ws2812-rgb",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Example software for controlling a WS2812 RGB LED array via network",
   "keywords": [
     "blinky",
