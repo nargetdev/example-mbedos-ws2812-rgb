@@ -40,15 +40,14 @@ NET: rx[192]
 ```
 The transmitted file format is trivial - just sequence of RGB triplets with one byte per channel. The total file size is therefore **WIDTH** x **HEIGHT** x **3** bytes. You can easily convert your own 8x8 images using [ImageMagick](http://www.imagemagick.org/script/index.php) or [GraphicsMagick](http://www.graphicsmagick.org/):
 
+```bash
+convert docs/smiley-happy.png smiley-happy.rgb
+```
 The device will confirm each data reception over the network - and respond with its screen size and type:
 ```json
 {"type": "RAINBOW_MATRIX", "width": 8,"height": 8}
 ```
 You can simply send a zero sized packet to detect the screen size o nthe other end.
-
-```bash
-convert docs/smiley-happy.png smiley-happy.rgb
-```
 
 ### Development Pre-Requisites
 
