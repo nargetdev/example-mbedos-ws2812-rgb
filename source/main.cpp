@@ -22,21 +22,27 @@
 #include "sockets/UDPSocket.h"
 #include "ws2xxx-rgb-led/ws2xxx.h"
 
+#define IP "10.200.1.20"
+#define MASK "255.255.255.0"
+#define GATEWAY "10.200.1.200"
+
 #define STR_NUM(x) #x
 #define STR(x) STR_NUM(x)
 
 using namespace mbed::Sockets::v0;
 
-#define UDP_SERVER_PORT 2342
-#define PIXEL_WIDTH 8
-#define PIXEL_HEIGHT 8
+#define UDP_SERVER_PORT 7890
+// #define PIXEL_WIDTH 8
+// #define PIXEL_HEIGHT 8
+#define STRIP_LENGTH 6
 #define SERVER_RESPONSE "{\"type\": \"RAINBOW_MATRIX\", \"width\": " STR(PIXEL_WIDTH) ",\"height\": " STR(PIXEL_HEIGHT) "}\n\r"
 
 static UDPSocket *g_udp_server;
 static EthernetInterface g_eth;
 static DigitalOut g_led(LED1);
 static Serial g_pc(USBTX, USBRX);
-static WS2xxx g_rgb(PTD2, PIXEL_WIDTH, PIXEL_HEIGHT);
+// static WS2xxx g_rgb(PTD2, PIXEL_WIDTH, PIXEL_HEIGHT);
+static WS2xxx g_rgb(PTC6, STRIP_LENGTH);
 static const char g_id_string[] = SERVER_RESPONSE;
 
 static void ActivityLedToggle(void) {
@@ -54,7 +60,8 @@ static void NetworkReceive(Socket *s) {
     SocketAddr addr;
     int pos;
     uint16_t port;
-    uint8_t buffer[PIXEL_WIDTH*PIXEL_HEIGHT*3], *p;
+    // uint8_t buffer[PIXEL_WIDTH*PIXEL_HEIGHT*3], *p;
+    uint8_t buffer[STRIP_LENGTH*3], *p;
     size_t len = sizeof(buffer);
 
     /* Recieve the packet */
@@ -91,7 +98,7 @@ static void NetworkReceive(Socket *s) {
 
 static void NetworkInit(void){
     /* Initialise with DHCP, connect, and start up the stack */
-    g_eth.init();
+    g_eth.init(IP,MASK,GATEWAY);
     g_eth.connect();
 
     socket_error_t err = lwipv4_socket_init();
@@ -118,14 +125,27 @@ void app_start(int, char**){
     /* set 115200 baud rate for stdout */
     g_pc.baud(115200);
 
-    /* set initial pixels */
-    for(i=0; i<PIXEL_WIDTH; i++)
-    {
-        g_rgb.set(i,i, 0xFF0000);
-        g_rgb.set(PIXEL_WIDTH-1-i, i, 0x00FF00);
-    }
-    /* transmit first RGB frame */
-    g_rgb.send();
+    // while (1)
+    // {
+    //     /* set initial pixels */
+        for (i = 0; i < STRIP_LENGTH; i++)
+        {
+            g_rgb.set(i, 0x0);
+            // g_rgb.set(PIXEL_WIDTH-1-i, i, 0x00FF00);
+        }
+        /* transmit first RGB frame */
+        g_rgb.send();
+    //     wait(.5);
+
+    //     for (i = 0; i < STRIP_LENGTH; i++)
+    //     {
+    //         g_rgb.set(i, 0x0);
+    //         // g_rgb.set(PIXEL_WIDTH-1-i, i, 0x00FF00);
+    //     }
+    //     /* transmit first RGB frame */
+    //     g_rgb.send();
+    //     wait(.5);
+    // }
 
     /* initialize network */
     NetworkInit();
